@@ -22,7 +22,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        DB::statement('ALTER TABLE carrito_items ADD CONSTRAINT chk_carrito_items_1 CHECK ((variante_arreglo_id IS NULL) <> (diseno_personalizado_id IS NULL))');
         DB::statement('ALTER TABLE carrito_items ADD CONSTRAINT chk_carrito_items_2 CHECK (cantidad > 0)');
     }
 

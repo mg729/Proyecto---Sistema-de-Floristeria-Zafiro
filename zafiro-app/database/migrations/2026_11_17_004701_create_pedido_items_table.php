@@ -32,7 +32,6 @@ return new class extends Migration
             $table->index(['florista_id', 'estado_preparacion']);
         });
 
-        DB::statement('ALTER TABLE pedido_items ADD CONSTRAINT chk_pedido_items_1 CHECK ((variante_arreglo_id IS NULL) <> (diseno_personalizado_id IS NULL))');
         DB::statement('ALTER TABLE pedido_items ADD CONSTRAINT chk_pedido_items_2 CHECK (cantidad > 0)');
         DB::statement('ALTER TABLE pedido_items ADD CONSTRAINT chk_pedido_items_3 CHECK (descuento >= 0)');
     }
