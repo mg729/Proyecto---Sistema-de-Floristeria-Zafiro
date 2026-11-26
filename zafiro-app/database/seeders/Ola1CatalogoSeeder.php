@@ -2,10 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\FormatoArreglo;
-use App\Models\Ocasion;
-use App\Models\Proveedor;
-use App\Models\Tamano;
 use Illuminate\Database\Seeder;
 
 class Ola1CatalogoSeeder extends Seeder

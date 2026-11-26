@@ -6,18 +6,12 @@ use Illuminate\Database\Seeder;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
-use App\Models\CategoriaInsumo;
-use App\Models\FormatoArreglo;
-use App\Models\Insumo;
-use App\Models\Ocasion;
-use App\Models\Tamano;
-
 class Ola3ArreglosSeeder extends Seeder
 {
     
     public function run(): void
     {
-        /*
+        
         $tieneCatalogoBase = FormatoArreglo::exists()
             && Tamano::exists()
             && Ocasion::exists();
@@ -34,6 +28,6 @@ class Ola3ArreglosSeeder extends Seeder
             ArregloSeeder::class,
             VarianteArregloSeeder::class,
             RecetaItemSeeder::class,
-        ]); */
+        ]); 
     }
 }
