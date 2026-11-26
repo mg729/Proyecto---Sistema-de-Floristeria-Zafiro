@@ -50,7 +50,7 @@ class ProveedorSeeder extends Seeder
                     'nombre' => $nombreEmpresa,
                     'contacto' => $faker->name(),
                     'telefono' => $telefono,
-                    'email' => 'ventas' . ($indice + 1) . '@proveedores-hn.test',
+                    'correo' => 'ventas' . ($indice + 1) . '@proveedores-hn.test',
                     'direccion' => 'Col. ' . $faker->streetName() . ', ' . ($indice % 2 === 0 ? 'Tegucigalpa' : 'San Pedro Sula'),
                     'activo' => true,
                 ]

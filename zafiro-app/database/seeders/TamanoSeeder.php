@@ -17,32 +17,20 @@ class TamanoSeeder extends Seeder
         $tamanos = [
             [
                 'nombre' => 'Estándar',
-                'slug' => 'estandar',
-                'multiplicador_precio' => 1.00,
-                'multiplicador_cantidad' => 1.00,
-                'orden' => 1,
-                'activo' => true,
+                
             ],
             [
                 'nombre' => 'Premium',
-                'slug' => 'premium',
-                'multiplicador_precio' => 1.35,
-                'multiplicador_cantidad' => 1.30,
-                'orden' => 2,
-                'activo' => true,
+               
             ],
             [
                 'nombre' => 'Deluxe',
-                'slug' => 'deluxe',
-                'multiplicador_precio' => 1.75,
-                'multiplicador_cantidad' => 1.65,
-                'orden' => 3,
-                'activo' => true,
+               
             ],
         ];
 
         foreach ($tamanos as $tamano) {
-            $tamano['slug'] = $tamano['slug'] ?? Str::slug($tamano['nombre']);
+            //$tamano['slug'] = $tamano['slug'] ?? Str::slug($tamano['nombre']);
 
             Tamano::updateOrCreate(
                 ['nombre' => $tamano['nombre']],
