@@ -14,10 +14,10 @@ class Ola1CatalogoSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            Proveedor::class,
-            Ocasion::class,
-            FormatoArreglo::class,
-            Tamano::class,
+            ProveedorSeeder::class,
+            OcasionSeeder::class,
+            FormatoArregloSeeder::class,
+            TamanoSeeder::class,
         ]);
     }
 }
