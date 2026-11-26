@@ -7,8 +7,12 @@ use Illuminate\Database\Seeder;
 class Ola1SeguridadSeeder extends Seeder
 {
     // Integrante 1 · Ola 1: roles, geografía, empresa, tiendas, usuarios y datos SAR
-    public function run(): void
+        public function run(): void
     {
-        //
+        $this->call([
+            RolSeeder::class,
+            DepartamentoSeeder::class,
+            MunicipioSeeder::class,
+        ]);
     }
 }
