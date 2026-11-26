@@ -2,24 +2,35 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
+    // Ejecuta los seeders por olas y cada ola solo usa datos de las anteriores
     public function run(): void
     {
-        // User::factory(10)->create();
+        $this->call([
+            // Ola 1 - catálogos base (sin datos)
+            Ola1SeguridadSeeder::class,     
+            Ola1CatalogoSeeder::class,      
+            Ola1InsumosSeeder::class,       
+            Ola1CreadorSeeder::class,       
+            Ola1AgendaSeeder::class,
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            // Ola 2 - inventario y direcciones
+            Ola2InventarioSeeder::class, 
+            Ola2DireccionesSeeder::class, 
+
+            // Ola 3 - arreglos, promociones, diseños y mermas
+            Ola3ArreglosSeeder::class,      
+            Ola3CreadorSeeder::class,       
+
+            // Ola 4 - carritos y pedidos de prueba
+            Ola4PedidosSeeder::class,     
+
+            // Ola 5 - historial, kardex y facturas
+            Ola5TallerSeeder::class,        
+            Ola5FacturacionSeeder::class,
         ]);
     }
 }
