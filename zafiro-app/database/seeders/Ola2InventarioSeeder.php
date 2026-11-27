@@ -2,13 +2,14 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-
-use App\Models\Empleado; //
+use App\Models\CategoriaInsumo;
+use App\Models\Empleado;
 use App\Models\FormatoArreglo;
 use App\Models\Proveedor;
 use App\Models\Tienda;
 use App\Models\UnidadMedida;
+
+use Illuminate\Database\Seeder;
 
 class Ola2InventarioSeeder extends Seeder
 {
