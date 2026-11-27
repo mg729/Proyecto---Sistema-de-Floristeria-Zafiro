@@ -4,12 +4,30 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+
 class Ola3ArreglosSeeder extends Seeder
 {
-    // Integrante 2 · Ola 3: arreglos, imágenes, variantes y recetas
+    
     public function run(): void
     {
-        //
+        
+        $tieneCatalogoBase = FormatoArreglo::exists()
+            && Tamano::exists()
+            && Ocasion::exists();
+
+        $tieneInsumos = Insumo::exists()
+            && CategoriaInsumo::where('slug', 'bases')->exists();
+
+        if (! $tieneCatalogoBase || ! $tieneInsumos) {
+            $this->command->warn('Ola 3 · Arreglos: faltan catálogos base o insumos/categorías. Se salta.');
+            return;
+        }
+
+        $this->call([
+            ArregloSeeder::class,
+            VarianteArregloSeeder::class,
+            RecetaItemSeeder::class,
+        ]); 
     }
 }
-
