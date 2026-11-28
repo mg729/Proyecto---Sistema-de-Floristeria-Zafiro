@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\DB;
 
 class CarritoSeeder extends Seeder
 {
-    // Artículos por carrito (se repite en ciclo): 20 carritos → 32 artículos o más
     private const ARTICULOS = [2, 1, 2, 2, 1, 2, 1, 2, 2, 1];
 
     private const MENSAJES = [
@@ -29,7 +28,6 @@ class CarritoSeeder extends Seeder
 
         $usuarioPrincipal = DB::table('users')->where('email', 'cliente@zafiro.hn')->value('id');
 
-        // Solo clientes activos (inactivo@zafiro.hn queda fuera)
         $clientes = DB::table('clientes as c')
             ->join('users as u', 'u.id', '=', 'c.user_id')
             ->where('u.activo', true)
@@ -46,7 +44,7 @@ class CarritoSeeder extends Seeder
         $plantillas = DB::table('plantillas_tarjeta')->where('activo', true)->orderBy('id')->pluck('id')->all();
         $cuponBienvenida = DB::table('cupones')->where('codigo', 'BIENVENIDA10')->value('id');
 
-        // Un carrito por cliente y tienda. cliente@ tiene uno en cada tienda
+              Un carrito por cliente y tienda. cliente@ tiene uno en cada tienda
         $carritos = [];
         foreach ($clientes as $n => $cliente) {
             if ($cliente->user_id == $usuarioPrincipal) {
@@ -55,7 +53,7 @@ class CarritoSeeder extends Seeder
                 continue;
             }
 
-            // Si el cliente tiene un diseño, su carrito es de la tienda de ese diseño
+                  Si el cliente tiene un diseño, su carrito es de la tienda de ese diseño
             $diseno = $disenos->get($cliente->id)?->first();
             $carritos[] = [$cliente->id, $diseno?->tienda_id ?? ($n % 2 === 0 ? $tgu : $sps)];
         }
@@ -68,12 +66,12 @@ class CarritoSeeder extends Seeder
                     'cliente_id' => $clienteId,
                     'tienda_id' => $tiendaId,
                     'cupon_id' => ($n % 7 === 0) ? $cuponBienvenida : null,
-                    'expira_en' => now()->addHours(4),   // los carritos vencen a las 4 horas
+                    'expira_en' => now()->addHours(4),         los carritos vencen a las 4 horas
                     'created_at' => $ahora->copy()->subMinutes(10 + $n * 3),
                     'updated_at' => $ahora,
                 ]);
 
-                // Diseño del cliente en esa tienda (si tiene)
+                      Diseño del cliente en esa tienda (si tiene)
                 $diseno = $disenos->get($clienteId)?->firstWhere('tienda_id', $tiendaId);
                 $usadas = [];
 
@@ -82,7 +80,7 @@ class CarritoSeeder extends Seeder
 
                     $varianteId = null;
                     if (! $esDiseno) {
-                        // Variante distinta dentro del mismo carrito
+                              Variante distinta dentro del mismo carrito
                         $intento = $n * 5 + $j * 11;
                         do {
                             $varianteId = $variantes[$intento % count($variantes)];
@@ -93,7 +91,7 @@ class CarritoSeeder extends Seeder
 
                     $conDedicatoria = $articulosTotal % 2 === 0 && $plantillas;
 
-                    // Nunca variante y diseño en la misma fila
+                          Nunca variante y diseño en la misma fila
                     DB::table('carrito_items')->insert([
                         'carrito_id' => $carritoId,
                         'variante_arreglo_id' => $esDiseno ? null : $varianteId,
@@ -113,7 +111,7 @@ class CarritoSeeder extends Seeder
         });
     }
 
-    // Ids de variantes activas; primero las que tienen receta (para que la Ola 5 consuma lotes)
+          Ids de variantes activas; primero las que tienen receta (para que la Ola 5 consuma lotes)
     private function variantes(): array
     {
         $base = DB::table('variantes_arreglo as v')
