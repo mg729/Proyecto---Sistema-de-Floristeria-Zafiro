@@ -10,7 +10,6 @@ class PedidoSeeder extends Seeder
 {
     private const ISV = 0.15;
 
-    // 30 pedidos repartidos por estado (en el orden del flujo)
     private const DISTRIBUCION = [
         'pendiente' => 2,
         'en_armado' => 3,
@@ -21,10 +20,8 @@ class PedidoSeeder extends Seeder
         'cancelado' => 2,
     ];
 
-    // Artículos por pedido (se repite en ciclo): 30 pedidos → 54 artículos
     private const ARTICULOS = [1, 2, 2, 1, 3, 2, 1, 2, 3, 1];
 
-    // Días atrás en que se creó cada pedido (entregados entre 15 y 60 días, para tener meses distintos)
     private const DIAS_ATRAS = [
         'en_armado' => [1, 1, 2],
         'listo_para_entregar' => [2, 1, 2],
@@ -34,20 +31,17 @@ class PedidoSeeder extends Seeder
         'cancelado' => [10, 6],
     ];
 
-    // Cupones por pedido ('estado:posición' => código). Solo en pedidos recientes,
-    // porque los cupones vigentes empiezan hace 15 días.
     private const CUPONES = [
         'pendiente:0' => 'BIENVENIDA10',
         'en_armado:2' => 'TEGUCIGALPA10',
         'listo_para_entregar:1' => 'FLORES15',
-        'pagado:1' => 'AGOTADO20',      // AGOTADO20: exactamente 2 pedidos de clientes distintos
+        'pagado:1' => 'AGOTADO20',
         'pagado:2' => 'ZAFIRO50',
         'pagado:3' => 'SANPEDRO10',
         'en_ruta:1' => 'AGOTADO20',
         'en_ruta:2' => 'PRIMAVERA8',
     ];
 
-    // Pedidos con retiro en tienda (nunca pasan por en_ruta)
     private const RETIROS = ['pagado:4', 'entregado:3', 'entregado:7'];
 
     private const MENSAJES = [
@@ -63,7 +57,7 @@ class PedidoSeeder extends Seeder
     {
         $estados = DB::table('estados_pedido')->pluck('id', 'slug')->all();
         $tiendas = DB::table('tiendas')->whereIn('codigo', ['TGU01', 'SPS01'])->pluck('id', 'codigo')->all();
-        $turnos = DB::table('turnos_entrega')->orderBy('id')->get()->all();   // Mañana, Tarde
+        $turnos = DB::table('turnos_entrega')->orderBy('id')->get()->all();
         $cupos = DB::table('tienda_turno')->get()
             ->mapWithKeys(fn ($t) => [$t->tienda_id . '|' . $t->turno_entrega_id => (int) $t->cupo_maximo])
             ->all();
@@ -71,10 +65,8 @@ class PedidoSeeder extends Seeder
         $metodos = DB::table('metodos_pago')->pluck('id', 'slug')->all();
         $metodoTarjeta = $metodos['tarjeta'] ?? throw new \RuntimeException('Falta el método de pago "tarjeta".');
         $metodoTransferencia = $metodos['transferencia'] ?? throw new \RuntimeException('Falta el método de pago "transferencia".');
-        // El contrato dice efectivo-tienda; si el seeder de métodos todavía usa "efectivo", se acepta
         $metodoEfectivo = $metodos['efectivo-tienda'] ?? $metodos['efectivo'] ?? throw new \RuntimeException('Falta el método de pago en efectivo.');
 
-        // Personal por rol y tienda, del id más bajo al más alto (florista@ y repartidor@ van primero)
         $personal = [];
         $empleados = DB::table('empleados as e')
             ->join('roles as r', 'r.id', '=', 'e.rol_id')
@@ -92,7 +84,6 @@ class PedidoSeeder extends Seeder
             return $lista[$n % count($lista)];
         };
 
-        // Clientes activos: cliente@ y los demás (inactivo@ queda fuera)
         $usuarioPrincipal = DB::table('users')->where('email', 'cliente@zafiro.hn')->value('id');
         $activos = DB::table('clientes as c')
             ->join('users as u', 'u.id', '=', 'c.user_id')
@@ -106,7 +97,6 @@ class PedidoSeeder extends Seeder
         $direcciones = DB::table('direcciones')->whereNull('deleted_at')
             ->orderByDesc('es_principal')->orderBy('id')->get()->groupBy('cliente_id');
 
-        // Tarifas por tienda: zona_id => costo
         $tarifas = [];
         foreach (DB::table('tarifas_envio')->where('activo', true)->orderBy('zona_id')->get() as $t) {
             $tarifas[$t->tienda_id][$t->zona_id] = (float) $t->costo;
@@ -134,9 +124,9 @@ class PedidoSeeder extends Seeder
 
         $cupones = DB::table('cupones')->whereIn('codigo', array_unique(array_values(self::CUPONES)))->get()->keyBy('codigo');
 
-        $usosCupon = [];       // código => usos
-        $usosClienteCupon = []; // código|cliente => usos
-        $ocupados = [];         // tienda|fecha|turno => pedidos (para respetar el cupo)
+        $usosCupon = [];
+        $usosClienteCupon = [];
+        $ocupados = [];
 
         $reservarCupo = function (int $tiendaId, int $turnoId, Carbon $fecha) use (&$ocupados, $cupos): Carbon {
             $limite = $cupos[$tiendaId . '|' . $turnoId] ?? 0;
@@ -149,8 +139,8 @@ class PedidoSeeder extends Seeder
         };
 
         $registros = [];
-        $k = 0;          // índice global del pedido
-        $kOtros = 0;     // rotación de los demás clientes
+        $k = 0;
+        $kOtros = 0;
         $articulosTotal = 0;
 
         foreach (self::DISTRIBUCION as $estado => $cantidad) {
@@ -160,11 +150,9 @@ class PedidoSeeder extends Seeder
                 $tiendaId = $tiendas[$codigoTienda] ?? throw new \RuntimeException("No existe la tienda $codigoTienda.");
                 $esRetiro = in_array($clave, self::RETIROS, true);
 
-                // cliente@ tiene pedidos en 5 estados distintos (todos de TGU01)
                 $esPrincipal = $i === 0 && in_array($estado, ['pendiente', 'en_armado', 'pagado', 'en_ruta', 'entregado'], true);
                 $cliente = $esPrincipal ? $principal : $otros[$kOtros++ % $otros->count()];
 
-                // ---- Fechas ----
                 $creado = match ($estado) {
                     'pendiente' => now()->subHours(2 + $i * 4),
                     default => now()->subDays(self::DIAS_ATRAS[$estado][$i])->setTime(8 + $k % 5, ($k * 7) % 60, 0),
@@ -176,11 +164,10 @@ class PedidoSeeder extends Seeder
                     'listo_para_entregar' => now()->addDays(1 + intdiv($i + 1, 2)),
                     'pagado' => now()->addDays(1 + $i % 3),
                     'en_ruta' => now(),
-                    default => $creado->copy()->addDays(2),   // entregado y cancelado
+                    default => $creado->copy()->addDays(2),
                 };
                 $fechaEntrega = $reservarCupo($tiendaId, $turno->id, $fechaBase->copy()->startOfDay());
 
-                // ---- Artículos ----
                 $cuantos = max(self::ARTICULOS[$k % 10], in_array($clave, ['en_armado:1', 'en_armado:2'], true) ? 2 : 1);
                 $disenoCliente = $disenos->first(fn ($d) => $d->cliente_id == $cliente->id && $d->tienda_id == $tiendaId);
                 $items = [];
@@ -218,7 +205,6 @@ class PedidoSeeder extends Seeder
                         $precio = (float) $v->precio;
                         $bruto = round($precio * $cant, 2);
 
-                        // Promoción vigente el día del pedido para ese arreglo
                         $promo = $promociones->get($v->arreglo_id)?->first(
                             fn ($p) => ($p->tienda_id === null || $p->tienda_id == $tiendaId)
                                 && $creado->between(Carbon::parse($p->fecha_inicio), Carbon::parse($p->fecha_fin))
@@ -246,7 +232,6 @@ class PedidoSeeder extends Seeder
                     fn ($it) => $it['precio_unitario'] * $it['cantidad'] - $it['descuento'], $items
                 )), 2);
 
-                // ---- Cupón (solo si es válido para este pedido) ----
                 $cupon = null;
                 $descuentoCupon = 0.0;
                 $codigoCupon = self::CUPONES[$clave] ?? null;
@@ -268,14 +253,12 @@ class PedidoSeeder extends Seeder
                     }
                 }
 
-                // ---- Entrega: dirección, zona y costo de envío ----
                 $zonaId = null;
                 $costoEnvio = 0.0;
                 $contacto = ['nombre' => trim($cliente->nombre . ' ' . $cliente->apellido), 'telefono' => $cliente->telefono ?: fake()->numerify('9#######'), 'direccion' => null, 'referencias' => null];
 
                 if (! $esRetiro) {
                     $zonasTienda = $tarifas[$tiendaId] ?? throw new \RuntimeException("La tienda $codigoTienda no tiene tarifas de envío.");
-                    // Preferir una dirección del cliente cuya zona tenga tarifa en esta tienda
                     $dir = ($direcciones->get($cliente->id) ?? collect())->first(fn ($d) => isset($zonasTienda[$d->zona_id]));
                     if ($dir) {
                         $zonaId = $dir->zona_id;
@@ -295,16 +278,13 @@ class PedidoSeeder extends Seeder
                     $costoEnvio = $zonasTienda[$zonaId];
                 }
 
-                // ---- Montos (fórmula del documento 01) ----
                 $isv = round(($subtotal - $descuentoCupon + $costoEnvio) * self::ISV, 2);
                 $total = round($subtotal - $descuentoCupon + $costoEnvio + $isv, 2);
 
-                // ---- Estado de preparación y florista de cada artículo ----
                 foreach ($items as $j => &$it) {
                     $prep = $this->estadoPreparacion($estado, $i, $j);
                     $it['estado_preparacion'] = $prep;
                     $conFlorista = $prep !== 'pendiente' || ($clave === 'pendiente:0' && $j === 0);
-                    // Los primeros de cada estado en TGU01 son de florista@ (contrato 2.5)
                     $it['florista_id'] = $conFlorista
                         ? ($i === 0 && $codigoTienda === 'TGU01' ? $tomar('florista', $tiendaId, 0) : $tomar('florista', $tiendaId))
                         : null;
@@ -318,7 +298,6 @@ class PedidoSeeder extends Seeder
                 }
                 unset($it);
 
-                // ---- Entrega: repartidor y horas ----
                 $despachado = in_array($estado, ['en_ruta', 'entregado'], true) && ! $esRetiro;
                 $repartidorId = $despachado
                     ? ($i === 0 && $codigoTienda === 'TGU01' ? $tomar('repartidor', $tiendaId, 0) : $tomar('repartidor', $tiendaId))
@@ -345,7 +324,6 @@ class PedidoSeeder extends Seeder
                     'recibido_por' => $estado === 'entregado' ? mb_substr($contacto['nombre'], 0, 120) : null,
                 ];
 
-                // ---- Pagos ----
                 $pagos = [];
                 $metodoId = $esRetiro ? $metodoEfectivo : ($k % 2 === 0 ? $metodoTarjeta : $metodoTransferencia);
                 if (in_array($estado, ['pagado', 'en_ruta', 'entregado'], true)) {
@@ -356,7 +334,6 @@ class PedidoSeeder extends Seeder
                     $pagos[] = $this->pago($metodoTransferencia, $metodoEfectivo, $metodoTarjeta, $total, 'pendiente', null, $k);
                 }
 
-                // Última fecha de actividad del pedido
                 $actualizado = match ($estado) {
                     'pendiente' => $creado->copy(),
                     'en_armado' => $creado->copy()->addHours(2),
@@ -394,7 +371,6 @@ class PedidoSeeder extends Seeder
             }
         }
 
-        // Los códigos se asignan en orden cronológico
         usort($registros, fn ($a, $b) => $a['creado']->timestamp <=> $b['creado']->timestamp);
 
         DB::transaction(function () use ($registros) {
@@ -433,7 +409,6 @@ class PedidoSeeder extends Seeder
             }
         });
 
-        // El contrato pide AGOTADO20 en exactamente 2 pedidos de clientes distintos
         $agotado = DB::table('cupones')->where('codigo', 'AGOTADO20')->value('id');
         $usos = DB::table('pedidos')->where('cupon_id', $agotado)->count();
         $clientes = DB::table('pedidos')->where('cupon_id', $agotado)->distinct()->count('cliente_id');
@@ -442,7 +417,6 @@ class PedidoSeeder extends Seeder
         }
     }
 
-    // Estado de preparación de cada artículo según el estado del pedido
     private function estadoPreparacion(string $estado, int $i, int $j): string
     {
         return match (true) {
@@ -471,7 +445,6 @@ class PedidoSeeder extends Seeder
         ];
     }
 
-    // Ids de variantes activas; primero las que tienen receta (para que la Ola 5 consuma lotes)
     private function variantes(): array
     {
         $base = DB::table('variantes_arreglo as v')
