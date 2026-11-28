@@ -10,7 +10,6 @@ class Ola4PedidosSeeder extends Seeder
     // Integrante 4 · Ola 4: carritos y pedidos de prueba
     public function run(): void
     {
-        // Si todavía no están los datos de las olas anteriores, se salta sin romper
         $faltantes = [];
 
         foreach ([
